@@ -3,77 +3,27 @@
 For additional information see the Model Card paper: https://arxiv.org/pdf/1810.03993.pdf
 
 ## Model Details
-
-This model is a binary classifier that predicts whether an individual's annual
-income exceeds $50,000 based on U.S. Census demographic data. It is a
-scikit-learn `RandomForestClassifier` trained with 100 estimators and a fixed
-`random_state` of 42 for reproducibility. Categorical features are encoded with
-a one-hot `OneHotEncoder` (configured with `handle_unknown="ignore"`) and the
-target is binarized with a `LabelBinarizer`. The trained model, the encoder, and
-the label binarizer are serialized with pickle to the `model/` directory. The
-model was developed as part of the Udacity "Deploying a Scalable ML Pipeline
-with FastAPI" project.
+I used a Random Forest Classifier from scikit-learn for this project. It is a binary classifier that predicts whether a person makes over $50K a year based on census data. The model was trained with 100 estimators and a random state of 42. For preprocessing, I used a `OneHotEncoder` (with `handle_unknown="ignore"`) for the categorical features and a `LabelBinarizer` for the target variable. The trained model and the encoders are saved in the `model/` folder as `.pkl` files. 
 
 ## Intended Use
-
-The model is intended for educational and demonstration purposes, showing an
-end-to-end machine learning pipeline that includes training, evaluation on data
-slices, and deployment behind a FastAPI REST endpoint. The primary users are
-students and engineers learning ML DevOps practices. It is **not** intended for
-real-world decisions about individuals, such as lending, hiring, or credit
-determinations.
+This model was built to fulfill the requirements for the Udacity "Deploying a Scalable ML Pipeline with FastAPI" project. It is strictly for educational purposes to demonstrate how to build an ML pipeline, evaluate data slices, and set up a FastAPI app. It should not be used to make actual real-world decisions regarding lending, hiring, or salaries.
 
 ## Training Data
-
-The training data comes from the UCI Census Income ("Adult") dataset, provided
-as `data/census.csv`, which contains 32,561 records with 14 demographic
-features (e.g. age, workclass, education, marital status, occupation,
-relationship, race, sex, hours-per-week, and native-country) plus the `salary`
-target label. The data was cleaned to remove stray whitespace. The dataset was
-split 80/20 into training and test sets using a stratified split on the
-`salary` label with `random_state=42`, so the training set contains roughly
-26,048 records.
+The data is the public UCI Census Income ("Adult") dataset, saved in `data/census.csv`. It has 32,561 rows and 14 demographic features, including age, education, marital status, sex, and hours worked per week. I removed the extra whitespace from the columns and split the data, using 80% of it (about 26,048 rows) for training. The split was stratified based on the target `salary` column to maintain the class distribution.
 
 ## Evaluation Data
-
-The model was evaluated on the held-out 20% test split (roughly 6,513 records),
-which was processed with the same one-hot encoder and label binarizer fit on the
-training data (using `training=False`). In addition to overall metrics,
-performance was computed on slices of each categorical feature, with the
-per-slice results written to `slice_output.txt`.
+The remaining 20% of the dataset (about 6,513 rows) was held out and used for testing. I evaluated the model on this test set and also calculated performance metrics across different categorical data slices to see how the model performs on specific sub-groups. The results for these slices are saved in the `slice_output.txt` file.
 
 ## Metrics
+I evaluated the overall model using precision, recall, and F1 score. On the test set, the results were:
+* **Precision:** 0.7327
+* **Recall:** 0.6397
+* **F1 Score:** 0.6830
 
-The model is evaluated using precision, recall, and F1 (F-beta with beta=1).
-On the held-out test set, the model achieved a precision of 0.7327, a recall of
-0.6397, and an F1 score of 0.6830.
-
-Performance varies across data slices. For example, on the `sex` feature the
-model achieved an F1 score of 0.6847 for Female (precision 0.7638, recall
-0.6204) and an F1 score of 0.6827 for Male (precision 0.7274, recall 0.6432).
-On the `education` feature, performance ranged from an F1 score of 0.8889 for
-individuals with a Doctorate (precision 0.8889, recall 0.8889) down to an F1
-score of 0.4904 for individuals with an HS-grad education (precision 0.5975,
-recall 0.4159). The complete per-slice metrics for every categorical feature are
-available in `slice_output.txt`.
+Looking at the data slices in `slice_output.txt`, performance changes depending on the specific group. For instance, the F1 score for Female is 0.6847, while for Male it is 0.6827. Education level causes even wider variations; people with a Doctorate had an F1 score of 0.8889, while high school graduates dropped to an F1 score of 0.4904.
 
 ## Ethical Considerations
-
-The dataset encodes sensitive attributes such as race, sex, and native country,
-and the underlying 1994 census data reflects historical social and economic
-biases. Because the model learns from these patterns, its predictions can
-reproduce or amplify those biases, and the slice metrics show that accuracy is
-not uniform across demographic groups. The model should never be used to make or
-inform decisions that affect real individuals, and any deployment would require a
-careful fairness audit and bias mitigation.
+The dataset includes sensitive demographic information like race, sex, and native country. Because this is real historical census data from 1994, it reflects the social and economic inequalities of that time period. The model naturally picks up on these biases, meaning its predictions will not be completely fair across all demographic groups (which is reflected in the slice metrics). It should not be used on real people without serious bias mitigation.
 
 ## Caveats and Recommendations
-
-The data is from the 1994 U.S. Census and is now outdated; it does not reflect
-current income distributions or social conditions. The dataset is also class
-imbalanced, with most individuals earning at or below $50K, which depresses
-recall on the positive (>50K) class. The model was trained with default
-hyperparameters and no tuning, so performance could likely be improved with
-hyperparameter search, cross-validation, scaling of continuous features, or
-addressing class imbalance. Users should treat this model strictly as a learning
-example and validate any changes against the slice metrics in `slice_output.txt`.
+The biggest caveat is that the data is very outdated (1994) and does not represent today's economy. The dataset is also highly class-imbalanced because far more people in the data make under $50K than over it, which negatively impacts the recall for the >50K class. I trained the Random Forest using default hyperparameters, so running a hyperparameter search or utilizing techniques to handle the class imbalance would likely improve the model's performance.
